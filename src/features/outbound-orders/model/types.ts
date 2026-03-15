@@ -34,3 +34,17 @@ export type OutboundOrder = {
   trackingNumber: string;
   updatedAt: string;
 };
+
+export type GetOutboundOrdersParams = {
+  page: number;
+  limit: number;
+  search?: string;
+};
+
+export type GetOutboundOrdersResult = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  orders: OutboundOrder[];
+};

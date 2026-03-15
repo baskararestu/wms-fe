@@ -1,5 +1,5 @@
 import { httpClient } from "../../../shared/api/httpClient";
-import type { OrdersApiResponse, OutboundOrder } from "../model/types";
+import type { GetOutboundOrdersParams, GetOutboundOrdersResult, OrdersApiResponse, OutboundOrder } from "../model/types";
 
 const formatStatusLabel = (value: string) =>
   value
@@ -33,8 +33,14 @@ const mapOrder = (order: OrdersApiResponse["data"]["orders"][number]): OutboundO
   updatedAt: formatDateTime(order.updated_at),
 });
 
-export const getOutboundOrders = async () => {
-  const response = await httpClient.get<OrdersApiResponse>("/api/orders?page=1&limit=1000", {
+export const getOutboundOrders = async ({ page, limit, search }: GetOutboundOrdersParams): Promise<GetOutboundOrdersResult> => {
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    search: search || "",
+  });
+
+  const response = await httpClient.get<OrdersApiResponse>(`/api/orders?${searchParams.toString()}`, {
     headers: {
       Accept: "application/json",
     },
@@ -46,6 +52,9 @@ export const getOutboundOrders = async () => {
 
   return {
     total: response.data.data.total,
+    page: response.data.data.page,
+    limit: response.data.data.limit,
+    totalPages: response.data.data.total_pages,
     orders: response.data.data.orders.map(mapOrder),
   };
 };

@@ -20,18 +20,12 @@ const statusToneClassMap: Record<string, "emerald" | "rose" | "amber" | "violet"
 const getStatusTone = (value: string) => statusToneClassMap[value] ?? "slate";
 
 export const OutboundOrdersTable = () => {
-  const { currentPage, errorMessage, filteredTotal, isLoading, orders, pageNumbers, searchTerm, setCurrentPage, setSearchTerm, totalPages, visibleEnd, visibleStart } = useOutboundOrders();
+  const { currentPage, errorMessage, isLoading, orders, pageNumbers, pageSizeOptions, rowsPerPage, searchTerm, setCurrentPage, setRowsPerPage, setSearchTerm, totalEntries, totalPages, visibleEnd, visibleStart } = useOutboundOrders();
 
   return (
     <div className="space-y-4">
       <div className="rounded border border-slate-200 bg-white p-3">
-        <input
-          type="search"
-          placeholder="Search here..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="w-full rounded border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-blue-600"
-        />
+        <input type="search" placeholder="Search here..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full rounded border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-blue-600" />
       </div>
 
       <div className="overflow-hidden rounded border border-slate-200 bg-white">
@@ -101,7 +95,7 @@ export const OutboundOrdersTable = () => {
           </table>
         </div>
 
-        <Pagination currentPage={currentPage} pageNumbers={pageNumbers} totalPages={totalPages} visibleStart={visibleStart} visibleEnd={visibleEnd} totalEntries={filteredTotal} onPageChange={setCurrentPage} />
+        <Pagination currentPage={currentPage} pageNumbers={pageNumbers} totalPages={totalPages} visibleStart={visibleStart} visibleEnd={visibleEnd} totalEntries={totalEntries} rowsPerPage={rowsPerPage} pageSizeOptions={pageSizeOptions} onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage} />
       </div>
     </div>
   );

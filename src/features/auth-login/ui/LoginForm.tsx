@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { AppButton } from "../../../widgets/button/ui/AppButton";
 import { useLoginForm } from "../model/useLoginForm";
 
@@ -6,7 +8,12 @@ type LoginFormProps = {
 };
 
 export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
-  const { email, password, rememberMe, setEmail, setPassword, toggleRememberMe, handleSubmit } = useLoginForm();
+  const navigate = useNavigate();
+  const { email, password, rememberMe, setEmail, setPassword, toggleRememberMe, handleSubmit } = useLoginForm({
+    onSuccess: () => {
+      navigate("/dashboard");
+    },
+  });
 
   return (
     <form className="grid gap-3.5" onSubmit={handleSubmit}>

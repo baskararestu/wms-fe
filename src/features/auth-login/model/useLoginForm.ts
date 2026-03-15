@@ -13,7 +13,11 @@ type UseLoginFormReturn = {
   handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-export const useLoginForm = (): UseLoginFormReturn => {
+type UseLoginFormOptions = {
+  onSuccess?: (payload: LoginPayload) => void;
+};
+
+export const useLoginForm = ({ onSuccess }: UseLoginFormOptions = {}): UseLoginFormReturn => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -31,6 +35,7 @@ export const useLoginForm = (): UseLoginFormReturn => {
       rememberMe,
     };
 
+    onSuccess?.(payload);
     console.log("Login submit payload:", payload);
   };
 

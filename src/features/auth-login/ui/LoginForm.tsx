@@ -9,7 +9,7 @@ type LoginFormProps = {
 
 export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
   const navigate = useNavigate();
-  const { email, password, rememberMe, setEmail, setPassword, toggleRememberMe, handleSubmit } = useLoginForm({
+  const { email, password, rememberMe, isSubmitting, errorMessage, setEmail, setPassword, toggleRememberMe, handleSubmit } = useLoginForm({
     onSuccess: () => {
       navigate("/dashboard");
     },
@@ -38,9 +38,11 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
         </button>
       </div>
 
-      <AppButton fullWidth type="submit" variant="primary">
-        Sign in to Dashboard
+      <AppButton fullWidth type="submit" variant="primary" disabled={isSubmitting}>
+        {isSubmitting ? "Signing in..." : "Sign in to Dashboard"}
       </AppButton>
+
+      {errorMessage ? <p className="text-xs font-medium text-rose-600">{errorMessage}</p> : null}
 
       <div className="relative my-1 text-center before:absolute before:left-0 before:right-0 before:top-1/2 before:border-t before:border-slate-200" aria-hidden="true">
         <span className="relative bg-white px-2 text-xs text-slate-400">or</span>

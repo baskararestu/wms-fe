@@ -1,6 +1,10 @@
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { IoNotificationsOutline } from "react-icons/io5";
 import { LuLayoutGrid, LuLogOut } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import { logoutUser } from "../../../entities/user/api/logout";
 
 type NavbarItem = {
   label: string;
@@ -13,8 +17,32 @@ type DashboardNavbarProps = {
 };
 
 export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const onNoAction = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+  };
+
+  const onLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+      await logoutUser();
+      toast.success("Logout berhasil");
+      navigate("/login", { replace: true });
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error("Logout gagal", { description: error.message });
+      } else {
+        toast.error("Logout gagal");
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -44,7 +72,7 @@ export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
           BR
         </button>
 
-        <button type="button" className="p-1" aria-label="Logout">
+        <button type="button" className="p-1 disabled:cursor-not-allowed disabled:opacity-60" aria-label="Logout" onClick={onLogout} disabled={isLoggingOut}>
           <LuLogOut />
         </button>
       </div>

@@ -12,7 +12,7 @@ const dashboardTabs = [
 export const DashboardPage = () => {
   return (
     <MainLayout className="bg-white">
-      <section className="w-full h-full overflow-hidden">
+      <section className="w-full h-screen">
         <DashboardNavbar items={dashboardTabs} />
         <OutboundDashboardContent />
       </section>

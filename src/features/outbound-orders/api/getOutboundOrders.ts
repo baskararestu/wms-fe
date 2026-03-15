@@ -33,12 +33,39 @@ const mapOrder = (order: OrdersApiResponse["data"]["orders"][number]): OutboundO
   updatedAt: formatDateTime(order.updated_at),
 });
 
-export const getOutboundOrders = async ({ page, limit, search }: GetOutboundOrdersParams): Promise<GetOutboundOrdersResult> => {
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    search: search || "",
-  });
+export const getOutboundOrders = async ({ page, limit, search, sortBy, sortDir, wmsStatus, marketplaceStatus, shippingStatus, shopId }: GetOutboundOrdersParams): Promise<GetOutboundOrdersResult> => {
+  const searchParams = new URLSearchParams();
+
+  searchParams.set("page", String(page));
+  searchParams.set("limit", String(limit));
+
+  if (search?.trim()) {
+    searchParams.set("search", search.trim());
+  }
+
+  if (sortBy) {
+    searchParams.set("sort_by", sortBy);
+  }
+
+  if (sortDir) {
+    searchParams.set("sort_dir", sortDir);
+  }
+
+  if (wmsStatus) {
+    searchParams.set("wms_status", wmsStatus);
+  }
+
+  if (marketplaceStatus) {
+    searchParams.set("marketplace_status", marketplaceStatus);
+  }
+
+  if (shippingStatus) {
+    searchParams.set("shipping_status", shippingStatus);
+  }
+
+  if (shopId) {
+    searchParams.set("shop_id", shopId);
+  }
 
   const response = await httpClient.get<OrdersApiResponse>(`/api/orders?${searchParams.toString()}`, {
     headers: {

@@ -39,6 +39,12 @@ export type GetOutboundOrdersParams = {
   page: number;
   limit: number;
   search?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  wmsStatus?: string;
+  marketplaceStatus?: string;
+  shippingStatus?: string;
+  shopId?: string;
 };
 
 export type GetOutboundOrdersResult = {
@@ -47,4 +53,14 @@ export type GetOutboundOrdersResult = {
   limit: number;
   totalPages: number;
   orders: OutboundOrder[];
+};
+
+export type OutboundOrdersFilters = {
+  search: string;
+  sortBy: string;
+  sortDir: "asc" | "desc";
+  wmsStatus: string;
+  marketplaceStatus: string;
+  shippingStatus: string;
+  shopId: string;
 };

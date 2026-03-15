@@ -3,7 +3,7 @@ import { OutboundOrdersTable } from "../../../features/outbound-orders/ui/Outbou
 
 export const OutboundDashboardContent = () => {
   return (
-    <section className="h-auto space-y-4 bg-slate-50 px-6 py-5">
+    <section className="h-auto space-y-4 bg-white px-6 py-5">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Outbound</h1>
         <p className="text-xs text-slate-500">Manage all outbound processes</p>

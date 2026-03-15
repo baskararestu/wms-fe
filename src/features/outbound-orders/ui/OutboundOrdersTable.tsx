@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { LuArrowUpDown, LuListFilter } from "react-icons/lu";
+import { LuArrowUpDown } from "react-icons/lu";
 
 import { AppButton } from "../../../widgets/button/ui/AppButton";
 import { Badge } from "../../../shared/ui/badge/Badge";
 import { Pagination } from "../../../shared/ui/pagination/Pagination";
 import { useOutboundOrders } from "../model/useOutboundOrders";
+import { HiOutlineBarsArrowUp } from "react-icons/hi2";
+import { AiOutlineBars } from "react-icons/ai";
 
 const statusToneClassMap: Record<string, "emerald" | "rose" | "amber" | "violet" | "blue" | "cyan" | "orange" | "slate"> = {
   Delivered: "emerald",
@@ -115,50 +117,52 @@ export const OutboundOrdersTable = () => {
     const columnHasFilterTab = Boolean(config.filterKey);
 
     return (
-      <div className="absolute left-0 top-full z-20 mt-2 w-64 rounded border border-slate-200 bg-white p-2 shadow-xl">
+      <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-xl">
         <p className="mb-2 text-xs font-semibold text-slate-700">{config.label}</p>
 
-        <div className="mb-3 flex items-center gap-1 rounded bg-slate-100 p-1 text-[11px]">
-          <button type="button" onClick={() => setActiveTab("sort")} className={["rounded px-2 py-1 font-medium", activeTab === "sort" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"].join(" ")}>
-            Sort
-          </button>
-
-          {columnHasFilterTab ? (
-            <button type="button" onClick={() => setActiveTab("filter")} className={["rounded px-2 py-1 font-medium", activeTab === "filter" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"].join(" ")}>
-              Filter
+        <div className="mb-3 flex items-start gap-2">
+          <div className="flex flex-col items-center gap-1 rounded-md p-1">
+            <button type="button" onClick={() => setActiveTab("sort")} className={["inline-flex h-9 w-9 items-center justify-center rounded-md font-medium transition", activeTab === "sort" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-white/70"].join(" ")}>
+              <AiOutlineBars className="h-5 w-5" />
             </button>
-          ) : null}
+
+            {columnHasFilterTab ? (
+              <button type="button" onClick={() => setActiveTab("filter")} className={["inline-flex h-9 w-9 items-center justify-center rounded-md font-medium transition", activeTab === "filter" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-white/70"].join(" ")}>
+                <HiOutlineBarsArrowUp className="h-5 w-5" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="min-w-0 flex-1 rounded-md border border-slate-100 p-1.5">
+            {activeTab === "sort" ? (
+              <div className="grid gap-1">
+                <button type="button" onClick={() => updateFilterDraft("sortDir", "asc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "asc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
+                  <span>A - Z</span>
+                </button>
+                <button type="button" onClick={() => updateFilterDraft("sortDir", "desc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "desc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
+                  <span>Z - A</span>
+                </button>
+              </div>
+            ) : null}
+
+            {activeTab === "filter" && config.filterKey && config.filterOptions ? (
+              <div className="grid max-h-40 gap-2 overflow-y-auto">
+                {config.filterOptions.map((option) => {
+                  const filterKey = config.filterKey as "marketplaceStatus" | "shippingStatus" | "wmsStatus";
+                  const currentValue = filtersDraft[filterKey];
+                  const isChecked = currentValue === option.value;
+
+                  return (
+                    <label key={option.value || "all"} className={["inline-flex items-center gap-2 rounded border px-2 py-1.5 text-xs", isChecked ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-600 hover:bg-slate-50"].join(" ")}>
+                      <input type="checkbox" checked={isChecked} onChange={() => updateFilterDraft(filterKey, isChecked ? "" : option.value)} />
+                      <span>{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         </div>
-
-        {activeTab === "sort" ? (
-          <div className="mb-3 grid gap-1">
-            <button type="button" onClick={() => updateFilterDraft("sortDir", "asc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "asc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
-              <LuArrowUpDown className="h-3.5 w-3.5" />
-              <span>A - Z</span>
-            </button>
-            <button type="button" onClick={() => updateFilterDraft("sortDir", "desc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "desc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
-              <LuArrowUpDown className="h-3.5 w-3.5" />
-              <span>Z - A</span>
-            </button>
-          </div>
-        ) : null}
-
-        {activeTab === "filter" && config.filterKey && config.filterOptions ? (
-          <div className="mb-3 grid max-h-40 gap-2 overflow-y-auto">
-            {config.filterOptions.map((option) => {
-              const filterKey = config.filterKey as "marketplaceStatus" | "shippingStatus" | "wmsStatus";
-              const currentValue = filtersDraft[filterKey];
-              const isChecked = currentValue === option.value;
-
-              return (
-                <label key={option.value || "all"} className={["inline-flex items-center gap-2 rounded border px-2 py-1.5 text-xs", isChecked ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-600 hover:bg-slate-50"].join(" ")}>
-                  <input type="checkbox" checked={isChecked} onChange={() => updateFilterDraft(filterKey, isChecked ? "" : option.value)} />
-                  <span>{option.label}</span>
-                </label>
-              );
-            })}
-          </div>
-        ) : null}
 
         <div className="flex items-center justify-end gap-2">
           <button type="button" className="text-[11px] font-medium text-slate-500" onClick={onResetColumnFilter}>
@@ -223,23 +227,23 @@ export const OutboundOrdersTable = () => {
               <tr>
                 <th className="px-3 py-2 font-medium">Order ID</th>
                 <th className="relative px-3 py-2 font-medium">
-                  <button type="button" className={["inline-flex items-center gap-1", activeColumn === "marketplaceStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("marketplaceStatus")}>
+                  <button type="button" className={["inline-flex items-center gap-1 cursor-pointer", activeColumn === "marketplaceStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("marketplaceStatus")}>
                     Marketplace Status
-                    <LuListFilter className="h-3.5 w-3.5" />
+                    <LuArrowUpDown className="h-3.5 w-3.5" />
                   </button>
                   {renderColumnPopup("marketplaceStatus")}
                 </th>
                 <th className="relative px-3 py-2 font-medium">
-                  <button type="button" className={["inline-flex items-center gap-1", activeColumn === "shippingStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("shippingStatus")}>
+                  <button type="button" className={["inline-flex items-center gap-1 cursor-pointer", activeColumn === "shippingStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("shippingStatus")}>
                     Shipping Status
-                    <LuListFilter className="h-3.5 w-3.5" />
+                    <LuArrowUpDown className="h-3.5 w-3.5" />
                   </button>
                   {renderColumnPopup("shippingStatus")}
                 </th>
                 <th className="relative px-3 py-2 font-medium">
-                  <button type="button" className={["inline-flex items-center gap-1", activeColumn === "wmsStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("wmsStatus")}>
+                  <button type="button" className={["inline-flex items-center gap-1 cursor-pointer", activeColumn === "wmsStatus" ? "text-blue-600" : ""].join(" ")} onClick={() => openColumnPopup("wmsStatus")}>
                     WMS Status
-                    <LuListFilter className="h-3.5 w-3.5" />
+                    <LuArrowUpDown className="h-3.5 w-3.5" />
                   </button>
                   {renderColumnPopup("wmsStatus")}
                 </th>

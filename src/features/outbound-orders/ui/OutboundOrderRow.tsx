@@ -24,12 +24,7 @@ export const OutboundOrderRow = ({ order, onOpenDetail }: OutboundOrderRowProps)
       <td className="px-3 py-2">{order.trackingNumber}</td>
       <td className="px-3 py-2">{order.updatedAt}</td>
       <td className="px-3 py-2 text-right">
-        <AppButton
-          type="button"
-          variant="primary"
-          className="min-h-8! rounded-md px-3! py-1! text-[10px] shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none"
-          onClick={() => onOpenDetail(order.orderId)}
-        >
+        <AppButton type="button" variant="primary" className="min-h-8! rounded-md px-3! py-1! text-[10px] shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none" onClick={() => onOpenDetail(order.orderId)}>
           Detail
         </AppButton>
       </td>

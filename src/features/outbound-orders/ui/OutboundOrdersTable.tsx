@@ -32,19 +32,7 @@ export const OutboundOrdersTable = () => {
   const activeConfig = activeColumn ? columnConfig[activeColumn] : null;
 
   const renderColumnPopup = (column: FilterableColumn) => {
-    return (
-      <OrderColumnFilterPopover
-        column={column}
-        activeColumn={activeColumn}
-        activeTab={activeTab}
-        filtersDraft={filtersDraft}
-        onTabChange={setActiveTab}
-        onSortChange={(sortDir) => updateFilterDraft("sortDir", sortDir)}
-        onFilterChange={(key, value) => updateFilterDraft(key, value)}
-        onReset={onResetColumnFilter}
-        onSave={onSaveColumnFilter}
-      />
-    );
+    return <OrderColumnFilterPopover column={column} activeColumn={activeColumn} activeTab={activeTab} filtersDraft={filtersDraft} onTabChange={setActiveTab} onSortChange={(sortDir) => updateFilterDraft("sortDir", sortDir)} onFilterChange={(key, value) => updateFilterDraft(key, value)} onReset={onResetColumnFilter} onSave={onSaveColumnFilter} />;
   };
 
   const onSaveColumnFilter = () => {
@@ -153,9 +141,7 @@ export const OutboundOrdersTable = () => {
                 </tr>
               ) : null}
 
-              {!isLoading && !errorMessage
-                ? orders.map((order) => <OutboundOrderRow key={order.id} order={order} onOpenDetail={setSelectedOrderSn} />)
-                : null}
+              {!isLoading && !errorMessage ? orders.map((order) => <OutboundOrderRow key={order.id} order={order} onOpenDetail={setSelectedOrderSn} />) : null}
             </tbody>
           </table>
         </div>

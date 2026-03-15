@@ -1,95 +1,18 @@
 import { useState } from "react";
 import { LuArrowUpDown } from "react-icons/lu";
 
-import { AppButton } from "../../../widgets/button/ui/AppButton";
-import { Badge } from "../../../shared/ui/badge/Badge";
 import { Pagination } from "../../../shared/ui/pagination/Pagination";
+import { columnConfig, type FilterableColumn, type PopupTab } from "../model/columnFilterConfig";
 import { useOutboundOrders } from "../model/useOutboundOrders";
-import { HiOutlineBarsArrowUp } from "react-icons/hi2";
-import { AiOutlineBars } from "react-icons/ai";
-
-const statusToneClassMap: Record<string, "emerald" | "rose" | "amber" | "violet" | "blue" | "cyan" | "orange" | "slate"> = {
-  Delivered: "emerald",
-  Cancelled: "rose",
-  Canceled: "rose",
-  Shipping: "amber",
-  Processing: "violet",
-  Paid: "blue",
-  Shipped: "blue",
-  "Label Created": "cyan",
-  "Ready To Pick": "orange",
-  "Ready to Pickup": "orange",
-  "Awaiting Pickup": "slate",
-};
-
-const getStatusTone = (value: string) => statusToneClassMap[value] ?? "slate";
-
-const marketplaceStatusOptions = [
-  { label: "All", value: "" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Shipping", value: "shipping" },
-  { label: "Processing", value: "processing" },
-  { label: "Paid", value: "paid" },
-  { label: "Cancelled", value: "cancelled" },
-];
-
-const shippingStatusOptions = [
-  { label: "All", value: "" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Shipped", value: "shipped" },
-  { label: "Label Created", value: "label_created" },
-  { label: "Awaiting Pickup", value: "awaiting_pickup" },
-  { label: "Cancelled", value: "cancelled" },
-];
-
-const wmsStatusOptions = [
-  { label: "All", value: "" },
-  { label: "Ready to Pick", value: "READY_TO_PICK" },
-  { label: "Picking", value: "PICKING" },
-  { label: "Packed", value: "PACKED" },
-  { label: "Shipped", value: "SHIPPED" },
-];
-
-type FilterableColumn = "marketplaceStatus" | "shippingStatus" | "wmsStatus" | "updatedAt";
-type PopupTab = "sort" | "filter";
-
-const columnConfig: Record<
-  FilterableColumn,
-  {
-    label: string;
-    sortBy: string;
-    filterKey?: "marketplaceStatus" | "shippingStatus" | "wmsStatus";
-    filterOptions?: Array<{ label: string; value: string }>;
-  }
-> = {
-  marketplaceStatus: {
-    label: "Marketplace Status",
-    sortBy: "marketplace_status",
-    filterKey: "marketplaceStatus",
-    filterOptions: marketplaceStatusOptions,
-  },
-  shippingStatus: {
-    label: "Shipping Status",
-    sortBy: "shipping_status",
-    filterKey: "shippingStatus",
-    filterOptions: shippingStatusOptions,
-  },
-  wmsStatus: {
-    label: "WMS Status",
-    sortBy: "wms_status",
-    filterKey: "wmsStatus",
-    filterOptions: wmsStatusOptions,
-  },
-  updatedAt: {
-    label: "Update At",
-    sortBy: "updated_at",
-  },
-};
+import { OrderDetailModal } from "./OrderDetailModal";
+import { OrderColumnFilterPopover } from "./OrderColumnFilterPopover";
+import { OutboundOrderRow } from "./OutboundOrderRow";
 
 export const OutboundOrdersTable = () => {
   const { applyFilterPatch, appliedFilters, currentPage, errorMessage, filtersDraft, isLoading, orders, pageNumbers, pageSizeOptions, resetFilterKeys, rowsPerPage, setCurrentPage, setRowsPerPage, totalEntries, totalPages, updateFilterDraft, visibleEnd, visibleStart } = useOutboundOrders();
   const [activeColumn, setActiveColumn] = useState<FilterableColumn | null>(null);
   const [activeTab, setActiveTab] = useState<PopupTab>("sort");
+  const [selectedOrderSn, setSelectedOrderSn] = useState<string | null>(null);
 
   const openColumnPopup = (column: FilterableColumn) => {
     if (activeColumn === column) {
@@ -109,70 +32,18 @@ export const OutboundOrdersTable = () => {
   const activeConfig = activeColumn ? columnConfig[activeColumn] : null;
 
   const renderColumnPopup = (column: FilterableColumn) => {
-    if (activeColumn !== column) {
-      return null;
-    }
-
-    const config = columnConfig[column];
-    const columnHasFilterTab = Boolean(config.filterKey);
-
     return (
-      <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-xl">
-        <p className="mb-2 text-xs font-semibold text-slate-700">{config.label}</p>
-
-        <div className="mb-3 flex items-start gap-2">
-          <div className="flex flex-col items-center gap-1 rounded-md p-1">
-            <button type="button" onClick={() => setActiveTab("sort")} className={["inline-flex h-9 w-9 items-center justify-center rounded-md font-medium transition", activeTab === "sort" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-white/70"].join(" ")}>
-              <AiOutlineBars className="h-5 w-5" />
-            </button>
-
-            {columnHasFilterTab ? (
-              <button type="button" onClick={() => setActiveTab("filter")} className={["inline-flex h-9 w-9 items-center justify-center rounded-md font-medium transition", activeTab === "filter" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-white/70"].join(" ")}>
-                <HiOutlineBarsArrowUp className="h-5 w-5" />
-              </button>
-            ) : null}
-          </div>
-
-          <div className="min-w-0 flex-1 rounded-md border border-slate-100 p-1.5">
-            {activeTab === "sort" ? (
-              <div className="grid gap-1">
-                <button type="button" onClick={() => updateFilterDraft("sortDir", "asc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "asc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
-                  <span>A - Z</span>
-                </button>
-                <button type="button" onClick={() => updateFilterDraft("sortDir", "desc")} className={["flex items-center gap-2 rounded border px-2 py-1.5 text-xs", filtersDraft.sortDir === "desc" ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-500 hover:bg-slate-50"].join(" ")}>
-                  <span>Z - A</span>
-                </button>
-              </div>
-            ) : null}
-
-            {activeTab === "filter" && config.filterKey && config.filterOptions ? (
-              <div className="grid max-h-40 gap-2 overflow-y-auto">
-                {config.filterOptions.map((option) => {
-                  const filterKey = config.filterKey as "marketplaceStatus" | "shippingStatus" | "wmsStatus";
-                  const currentValue = filtersDraft[filterKey];
-                  const isChecked = currentValue === option.value;
-
-                  return (
-                    <label key={option.value || "all"} className={["inline-flex items-center gap-2 rounded border px-2 py-1.5 text-xs", isChecked ? "border-blue-400 bg-blue-50 text-blue-700" : "border-transparent text-slate-600 hover:bg-slate-50"].join(" ")}>
-                      <input type="checkbox" checked={isChecked} onChange={() => updateFilterDraft(filterKey, isChecked ? "" : option.value)} />
-                      <span>{option.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <button type="button" className="text-[11px] font-medium text-slate-500" onClick={onResetColumnFilter}>
-            Reset
-          </button>
-          <button type="button" className="rounded bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white" onClick={onSaveColumnFilter}>
-            Save
-          </button>
-        </div>
-      </div>
+      <OrderColumnFilterPopover
+        column={column}
+        activeColumn={activeColumn}
+        activeTab={activeTab}
+        filtersDraft={filtersDraft}
+        onTabChange={setActiveTab}
+        onSortChange={(sortDir) => updateFilterDraft("sortDir", sortDir)}
+        onFilterChange={(key, value) => updateFilterDraft(key, value)}
+        onReset={onResetColumnFilter}
+        onSave={onSaveColumnFilter}
+      />
     );
   };
 
@@ -214,10 +85,8 @@ export const OutboundOrdersTable = () => {
       <div className="rounded border border-slate-200 bg-white p-3">
         <div className="flex items-center gap-2">
           <input type="search" placeholder="Search order id / tracking" value={filtersDraft.search} onChange={(event) => updateFilterDraft("search", event.target.value)} className="w-full rounded border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-blue-600" />
-          <AppButton type="button" variant="primary" className="min-h-9! rounded-md px-3! py-1.5! text-xs shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none" onClick={() => applyFilterPatch({ search: filtersDraft.search })}>
-            Search
-          </AppButton>
         </div>
+        {filtersDraft.search !== appliedFilters.search ? <p className="mt-2 text-[11px] text-slate-500">Mencari...</p> : null}
       </div>
 
       <div className="relative rounded border border-slate-200 bg-white">
@@ -285,27 +154,7 @@ export const OutboundOrdersTable = () => {
               ) : null}
 
               {!isLoading && !errorMessage
-                ? orders.map((order) => (
-                    <tr key={order.id} className="border-t border-slate-100 text-slate-700">
-                      <td className="px-3 py-2">{order.orderId}</td>
-                      <td className="px-3 py-2">
-                        <Badge tone={getStatusTone(order.marketplaceStatus)}>{order.marketplaceStatus}</Badge>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge tone={getStatusTone(order.shippingStatus)}>{order.shippingStatus}</Badge>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge tone={getStatusTone(order.wmsStatus)}>{order.wmsStatus}</Badge>
-                      </td>
-                      <td className="px-3 py-2">{order.trackingNumber}</td>
-                      <td className="px-3 py-2">{order.updatedAt}</td>
-                      <td className="px-3 py-2 text-right">
-                        <AppButton type="button" variant="primary" className="min-h-8! rounded-md px-3! py-1! text-[10px] shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none">
-                          Detail
-                        </AppButton>
-                      </td>
-                    </tr>
-                  ))
+                ? orders.map((order) => <OutboundOrderRow key={order.id} order={order} onOpenDetail={setSelectedOrderSn} />)
                 : null}
             </tbody>
           </table>
@@ -313,6 +162,8 @@ export const OutboundOrdersTable = () => {
 
         <Pagination currentPage={currentPage} pageNumbers={pageNumbers} totalPages={totalPages} visibleStart={visibleStart} visibleEnd={visibleEnd} totalEntries={totalEntries} rowsPerPage={rowsPerPage} pageSizeOptions={pageSizeOptions} onPageChange={setCurrentPage} onRowsPerPageChange={setRowsPerPage} />
       </div>
+
+      {selectedOrderSn ? <OrderDetailModal orderSn={selectedOrderSn} onClose={() => setSelectedOrderSn(null)} /> : null}
 
       {(appliedFilters.marketplaceStatus || appliedFilters.shippingStatus || appliedFilters.wmsStatus || appliedFilters.search) && (
         <div className="flex flex-wrap items-center gap-2 text-xs">

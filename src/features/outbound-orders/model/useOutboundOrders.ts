@@ -5,6 +5,7 @@ import type { OutboundOrder, OutboundOrdersFilters } from "./types";
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const SEARCH_DEBOUNCE_MS = 450;
 
 const DEFAULT_FILTERS: OutboundOrdersFilters = {
   search: "",
@@ -30,6 +31,28 @@ export const useOutboundOrders = () => {
   const [appliedFilters, setAppliedFilters] = useState<OutboundOrdersFilters>(DEFAULT_FILTERS);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const debounce = window.setTimeout(() => {
+      const nextSearch = filtersDraft.search.trim();
+
+      setCurrentPage(1);
+      setAppliedFilters((previous) => {
+        if (previous.search === nextSearch) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          search: nextSearch,
+        };
+      });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(debounce);
+    };
+  }, [filtersDraft.search]);
 
   useEffect(() => {
     const fetchOrders = async () => {

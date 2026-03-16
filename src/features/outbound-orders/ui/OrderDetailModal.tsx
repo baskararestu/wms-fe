@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LuX } from "react-icons/lu";
+import { toast } from "sonner";
 
 import { AppButton } from "../../../widgets/button/ui/AppButton";
 import { getOutboundOrderDetail } from "../api/getOutboundOrderDetail";
-import type { OutboundOrderDetail } from "../model/types";
+import { packOrder, pickOrder, shipOrder } from "../api/handleOrder";
 
 type OrderDetailModalProps = {
   orderSn: string;
@@ -38,52 +39,63 @@ const getActionLabelByWmsStatus = (status: string) => {
 };
 
 export const OrderDetailModal = ({ orderSn, onClose }: OrderDetailModalProps) => {
-  const [detail, setDetail] = useState<OutboundOrderDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let isMounted = true;
+  const detailQuery = useQuery({
+    queryKey: ["outbound-order-detail", orderSn],
+    queryFn: () => getOutboundOrderDetail(orderSn),
+  });
 
-    const fetchOrderDetail = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
+  const processOrderMutation = useMutation({
+    mutationFn: async () => {
+      const detail = detailQuery.data;
 
-        const response = await getOutboundOrderDetail(orderSn);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setDetail(response);
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (error instanceof Error) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage("Gagal mengambil detail order");
-        }
-
-        setDetail(null);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      if (!detail) {
+        throw new Error("Detail order belum tersedia");
       }
-    };
 
-    void fetchOrderDetail();
+      const normalizedStatus = detail.wmsStatus.replace(/\s+/g, "_").toUpperCase();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [orderSn]);
+      if (normalizedStatus === "READY_TO_PICK" || normalizedStatus === "READY_TO_PICKUP") {
+        return pickOrder(detail.orderId);
+      }
 
+      if (normalizedStatus === "PICKING") {
+        return packOrder(detail.orderId);
+      }
+
+      if (normalizedStatus === "PACKED") {
+        return shipOrder(detail.orderId, "JNE");
+      }
+
+      throw new Error("Action tidak tersedia untuk status ini");
+    },
+    onSuccess: async (response) => {
+      toast.success(response.message || "Proses order berhasil");
+      await queryClient.invalidateQueries({ queryKey: ["outbound-order-detail", orderSn] });
+      await queryClient.invalidateQueries({ queryKey: ["outbound-orders"] });
+    },
+    onError: (error) => {
+      if (error instanceof Error) {
+        toast.error("Proses order gagal", { description: error.message });
+        return;
+      }
+
+      toast.error("Proses order gagal");
+    },
+  });
+
+  const handleProcessOrder = async () => {
+    if (!detailQuery.data || processOrderMutation.isPending) {
+      return;
+    }
+
+    await processOrderMutation.mutateAsync();
+  };
+
+  const detail = detailQuery.data;
   const actionLabel = detail ? getActionLabelByWmsStatus(detail.wmsStatus) : "Detail";
+  const canProcessAction = actionLabel !== "Detail";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onClick={onClose}>
@@ -95,10 +107,10 @@ export const OrderDetailModal = ({ orderSn, onClose }: OrderDetailModalProps) =>
           </button>
         </div>
 
-        {isLoading ? <p className="text-sm text-slate-500">Loading order detail...</p> : null}
-        {!isLoading && errorMessage ? <p className="text-sm text-rose-600">{errorMessage}</p> : null}
+        {detailQuery.isLoading ? <p className="text-sm text-slate-500">Loading order detail...</p> : null}
+        {!detailQuery.isLoading && detailQuery.error instanceof Error ? <p className="text-sm text-rose-600">{detailQuery.error.message}</p> : null}
 
-        {!isLoading && !errorMessage && detail ? (
+        {!detailQuery.isLoading && !detailQuery.error && detail ? (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 text-sm text-slate-700 md:grid-cols-2">
               <div>
@@ -156,8 +168,16 @@ export const OrderDetailModal = ({ orderSn, onClose }: OrderDetailModalProps) =>
               </table>
             </div>
 
-            <AppButton type="button" variant="primary" className="w-full rounded-md px-3! py-2! text-xs shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none">
-              {actionLabel}
+            <AppButton
+              type="button"
+              variant="primary"
+              className="w-full rounded-md px-3! py-2! text-xs shadow-none hover:enabled:translate-y-0 hover:enabled:shadow-none"
+              onClick={() => {
+                void handleProcessOrder();
+              }}
+              disabled={!canProcessAction || detailQuery.isLoading || processOrderMutation.isPending}
+            >
+              {processOrderMutation.isPending ? "Processing..." : actionLabel}
             </AppButton>
           </div>
         ) : null}

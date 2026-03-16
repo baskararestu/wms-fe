@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { getOutboundOrders } from "../api/getOutboundOrders";
-import type { OutboundOrder, OutboundOrdersFilters } from "./types";
+import { useOrderSyncStore } from "./orderSyncStore";
+import type { OutboundOrdersFilters } from "./types";
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -22,15 +24,11 @@ const resetFilterValueByKey = (key: keyof OutboundOrdersFilters): OutboundOrders
 };
 
 export const useOutboundOrders = () => {
-  const [orders, setOrders] = useState<OutboundOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
-  const [totalEntries, setTotalEntries] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [filtersDraft, setFiltersDraft] = useState<OutboundOrdersFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<OutboundOrdersFilters>(DEFAULT_FILTERS);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const refreshVersion = useOrderSyncStore((state) => state.refreshVersion);
 
   useEffect(() => {
     const debounce = window.setTimeout(() => {
@@ -54,43 +52,21 @@ export const useOutboundOrders = () => {
     };
   }, [filtersDraft.search]);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-
-        const response = await getOutboundOrders({
-          page: currentPage,
-          limit: rowsPerPage,
-          search: appliedFilters.search,
-          sortBy: appliedFilters.sortBy,
-          sortDir: appliedFilters.sortDir,
-          wmsStatus: appliedFilters.wmsStatus,
-          marketplaceStatus: appliedFilters.marketplaceStatus,
-          shippingStatus: appliedFilters.shippingStatus,
-          shopId: appliedFilters.shopId,
-        });
-        setOrders(response.orders);
-        setTotalEntries(response.total);
-        setTotalPages(response.totalPages);
-      } catch (error) {
-        if (error instanceof Error) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage("Gagal mengambil data order");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void fetchOrders();
-  }, [appliedFilters, currentPage, rowsPerPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [rowsPerPage]);
+  const ordersQuery = useQuery({
+    queryKey: ["outbound-orders", currentPage, rowsPerPage, appliedFilters, refreshVersion],
+    queryFn: () =>
+      getOutboundOrders({
+        page: currentPage,
+        limit: rowsPerPage,
+        search: appliedFilters.search,
+        sortBy: appliedFilters.sortBy,
+        sortDir: appliedFilters.sortDir,
+        wmsStatus: appliedFilters.wmsStatus,
+        marketplaceStatus: appliedFilters.marketplaceStatus,
+        shippingStatus: appliedFilters.shippingStatus,
+        shopId: appliedFilters.shopId,
+      }),
+  });
 
   const updateFilterDraft = <K extends keyof OutboundOrdersFilters>(key: K, value: OutboundOrdersFilters[K]) => {
     setFiltersDraft((previous) => ({
@@ -148,11 +124,15 @@ export const useOutboundOrders = () => {
     setAppliedFilters(DEFAULT_FILTERS);
   };
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  const handleRowsPerPageChange = (nextRowsPerPage: number) => {
+    setCurrentPage(1);
+    setRowsPerPage(nextRowsPerPage);
+  };
+
+  const totalEntries = ordersQuery.data?.total ?? 0;
+  const totalPages = ordersQuery.data?.totalPages ?? 1;
+  const orders = ordersQuery.data?.orders ?? [];
+  const errorMessage = ordersQuery.error instanceof Error ? ordersQuery.error.message : ordersQuery.error ? "Gagal mengambil data order" : null;
 
   const pageNumbers = useMemo(() => {
     const visibleWindow = 5;
@@ -177,9 +157,9 @@ export const useOutboundOrders = () => {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
+    setRowsPerPage: handleRowsPerPageChange,
     pageSizeOptions: PAGE_SIZE_OPTIONS,
-    isLoading,
+    isLoading: ordersQuery.isLoading || ordersQuery.isFetching,
     errorMessage,
     orders,
     totalPages,

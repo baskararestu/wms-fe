@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wms_frontend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    networks:
+      - wms_net
+
+networks:
+  wms_net:
+    driver: bridge

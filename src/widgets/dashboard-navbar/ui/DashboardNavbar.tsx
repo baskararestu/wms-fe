@@ -23,8 +23,6 @@ export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
   const [isConnectingShop, setIsConnectingShop] = useState(false);
   const [isShopConnected, setIsShopConnected] = useState<boolean | null>(null);
 
-  const shopId = import.meta.env.VITE_DEFAULT_SHOP_ID ?? "shopee-123";
-
   const onNoAction = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
@@ -57,14 +55,14 @@ export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
 
     try {
       setIsConnectingShop(true);
-      await startMarketplaceConnect(shopId);
-      const isConnected = await checkMarketplaceConnection(shopId);
+      const dataSHop = await startMarketplaceConnect();
+      const isConnected = await checkMarketplaceConnection(dataSHop.shop_id);
 
       setIsShopConnected(isConnected);
 
       if (isConnected) {
         toast.success("Shop connected", {
-          description: `${shopId} berhasil terkoneksi`,
+          description: `${dataSHop.shop_id} berhasil terkoneksi`,
         });
         return;
       }

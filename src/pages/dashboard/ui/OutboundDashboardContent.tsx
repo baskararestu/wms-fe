@@ -1,7 +1,10 @@
 import { SummaryCard } from "../../../widgets/summary-card/ui/SummaryCard";
 import { OutboundOrdersTable } from "../../../features/outbound-orders/ui/OutboundOrdersTable";
+import { useOutboundOrderSummary } from "../../../features/outbound-orders/model/useOutboundOrderSummary";
 
 export const OutboundDashboardContent = () => {
+  const { cancelledOrdersCount, totalOrdersCount, isLoading } = useOutboundOrderSummary();
+
   return (
     <section className="h-auto space-y-4 bg-white px-6 py-5">
       <header>
@@ -10,8 +13,8 @@ export const OutboundDashboardContent = () => {
       </header>
 
       <div className="grid max-w-sm grid-cols-2 gap-3">
-        <SummaryCard title="Total order" value="0" />
-        <SummaryCard title="Canceled" value="0" />
+        <SummaryCard title="Total order" value={isLoading ? "..." : String(totalOrdersCount)} />
+        <SummaryCard title="Canceled" value={isLoading ? "..." : String(cancelledOrdersCount)} />
       </div>
 
       <OutboundOrdersTable />

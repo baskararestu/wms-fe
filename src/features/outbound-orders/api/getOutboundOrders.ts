@@ -83,5 +83,9 @@ export const getOutboundOrders = async ({ page, limit, search, sortBy, sortDir, 
     limit: response.data.data.limit,
     totalPages: response.data.data.total_pages,
     orders: response.data.data.orders.map(mapOrder),
+    summaryStats: {
+      totalOrdersCount: response.data.data.summary_stats?.total_orders_count ?? response.data.data.total,
+      cancelledOrdersCount: response.data.data.summary_stats?.cancelled_orders_count ?? 0,
+    },
   };
 };

@@ -95,6 +95,10 @@ export type GetOutboundOrdersResult = {
   limit: number;
   totalPages: number;
   orders: OutboundOrder[];
+  summaryStats: {
+    totalOrdersCount: number;
+    cancelledOrdersCount: number;
+  };
 };
 
 export type OutboundOrdersFilters = {

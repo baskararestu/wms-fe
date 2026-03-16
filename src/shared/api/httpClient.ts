@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-import { clearAuthTokens, getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from "../auth/tokenStorage";
+import { forceLogout, isAccessTokenExpired } from "../auth/authSession";
+import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from "../auth/tokenStorage";
 
 type RefreshApiResponse = {
   code: number;
@@ -31,40 +32,8 @@ export const httpClient = axios.create({
 let isInterceptorInitialized = false;
 let refreshPromise: Promise<string> | null = null;
 
-const TOKEN_REFRESH_BUFFER_IN_SECONDS = 30;
-
 const shouldSkipRefresh = (requestUrl: string) => {
   return requestUrl.includes(LOGIN_PATH) || requestUrl.includes(REFRESH_PATH);
-};
-
-const parseJwtPayload = (token: string) => {
-  try {
-    const [, payload] = token.split(".");
-
-    if (!payload) {
-      return null;
-    }
-
-    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, "=");
-    const decodedPayload = window.atob(paddedPayload);
-
-    return JSON.parse(decodedPayload) as { exp?: number };
-  } catch {
-    return null;
-  }
-};
-
-const isAccessTokenExpired = (token: string) => {
-  const payload = parseJwtPayload(token);
-
-  if (!payload?.exp) {
-    return false;
-  }
-
-  const currentTimeInSeconds = Math.floor(Date.now() / 1000);
-
-  return payload.exp <= currentTimeInSeconds + TOKEN_REFRESH_BUFFER_IN_SECONDS;
 };
 
 const getOrRefreshAccessToken = async () => {
@@ -124,7 +93,7 @@ export const setupAuthInterceptors = () => {
         config.headers.Authorization = `Bearer ${nextAccessToken}`;
         return config;
       } catch (refreshError) {
-        clearAuthTokens();
+        forceLogout();
         return Promise.reject(refreshError);
       }
     }
@@ -154,7 +123,7 @@ export const setupAuthInterceptors = () => {
 
         return httpClient(originalRequest);
       } catch (refreshError) {
-        clearAuthTokens();
+        forceLogout();
         return Promise.reject(refreshError);
       }
     },

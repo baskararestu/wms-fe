@@ -1,5 +1,6 @@
 import { httpClient } from "../../../shared/api/httpClient";
-import { clearAuthTokens, getRefreshToken } from "../../../shared/auth/tokenStorage";
+import { forceLogout } from "../../../shared/auth/authSession";
+import { getRefreshToken } from "../../../shared/auth/tokenStorage";
 
 type LogoutApiResponse = {
   code: number;
@@ -10,7 +11,7 @@ export const logoutUser = async () => {
   const refreshToken = getRefreshToken();
 
   if (!refreshToken) {
-    clearAuthTokens();
+    forceLogout();
     return;
   }
 
@@ -31,6 +32,6 @@ export const logoutUser = async () => {
       throw new Error(response.data.message || "Logout gagal");
     }
   } finally {
-    clearAuthTokens();
+    forceLogout();
   }
 };

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { LuArrowUpDown } from "react-icons/lu";
+import { toast } from "sonner";
 
 import { Pagination } from "../../../shared/ui/pagination/Pagination";
+import { useMarketplaceStore } from "../../../entities/marketplace/model/marketplaceStore";
 import { columnConfig, type FilterableColumn, type PopupTab } from "../model/columnFilterConfig";
 import { useOutboundOrders } from "../model/useOutboundOrders";
 import { OrderDetailModal } from "./OrderDetailModal";
@@ -9,12 +11,44 @@ import { OrderColumnFilterPopover } from "./OrderColumnFilterPopover";
 import { OutboundOrderRow } from "./OutboundOrderRow";
 import { AppButton } from "../../../widgets/button/ui/AppButton";
 import { useOrderSyncStore } from "../model/orderSyncStore";
+import { syncOrders } from "../api/syncOrders";
 
 export const OutboundOrdersTable = () => {
   const { applyFilterPatch, appliedFilters, currentPage, errorMessage, filtersDraft, isLoading, orders, pageNumbers, pageSizeOptions, resetFilterKeys, rowsPerPage, setCurrentPage, setRowsPerPage, totalEntries, totalPages, updateFilterDraft, visibleEnd, visibleStart } = useOutboundOrders();
+  const connectedShopId = useMarketplaceStore((state) => state.connectedShopId);
+  const markOrdersUpdated = useOrderSyncStore((state) => state.markOrdersUpdated);
   const [activeColumn, setActiveColumn] = useState<FilterableColumn | null>(null);
   const [activeTab, setActiveTab] = useState<PopupTab>("sort");
   const [selectedOrderSn, setSelectedOrderSn] = useState<string | null>(null);
+  const [isSyncingOrders, setIsSyncingOrders] = useState(false);
+
+  const onSyncOrders = async () => {
+    if (isSyncingOrders) {
+      return;
+    }
+
+    if (!connectedShopId) {
+      toast.error("Shop belum terkoneksi", {
+        description: "Jalankan Start Connection terlebih dahulu",
+      });
+      return;
+    }
+
+    try {
+      setIsSyncingOrders(true);
+      const response = await syncOrders(connectedShopId);
+      markOrdersUpdated();
+      toast.success(response.message || "Sync orders berhasil");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error("Sync orders gagal", { description: error.message });
+      } else {
+        toast.error("Sync orders gagal");
+      }
+    } finally {
+      setIsSyncingOrders(false);
+    }
+  };
 
   const openColumnPopup = (column: FilterableColumn) => {
     if (activeColumn === column) {
@@ -77,9 +111,8 @@ export const OutboundOrdersTable = () => {
           <input type="search" placeholder="Search order id / tracking" value={filtersDraft.search} onChange={(event) => updateFilterDraft("search", event.target.value)} className="w-full rounded border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-blue-600" />
         </div>
         {filtersDraft.search !== appliedFilters.search ? <p className="mt-2 text-[11px] text-slate-500">Mencari...</p> : null}
-        {/* Button for sync order */}
-        <AppButton variant="outline" size="sm" className="mt-2" onClick={() => useOrderSyncStore.getState().syncOrders()}>
-          Sync Orders
+        <AppButton variant="secondary" className="mt-2 min-h-9! px-3! py-1.5! text-xs" onClick={() => void onSyncOrders()} disabled={isSyncingOrders}>
+          {isSyncingOrders ? "Syncing..." : "Sync Orders"}
         </AppButton>
       </div>
 

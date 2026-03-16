@@ -4,7 +4,8 @@ import { LuLayoutGrid, LuLogOut } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { checkMarketplaceConnection, startMarketplaceConnect } from "../../../entities/marketplace/api/shopConnection";
+import { getMarketplaceShopDetail, startMarketplaceConnect } from "../../../entities/marketplace/api/shopConnection";
+import { useMarketplaceStore } from "../../../entities/marketplace/model/marketplaceStore";
 import { logoutUser } from "../../../entities/user/api/logout";
 
 type NavbarItem = {
@@ -19,6 +20,7 @@ type DashboardNavbarProps = {
 
 export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
   const navigate = useNavigate();
+  const setConnectedShopId = useMarketplaceStore((state) => state.setConnectedShopId);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isConnectingShop, setIsConnectingShop] = useState(false);
   const [isShopConnected, setIsShopConnected] = useState<boolean | null>(null);
@@ -55,14 +57,16 @@ export const DashboardNavbar = ({ items }: DashboardNavbarProps) => {
 
     try {
       setIsConnectingShop(true);
-      const dataSHop = await startMarketplaceConnect();
-      const isConnected = await checkMarketplaceConnection(dataSHop.shop_id);
+      const startConnectData = await startMarketplaceConnect();
+      const shopDetail = await getMarketplaceShopDetail(startConnectData.shop_id);
+      const isConnected = true;
 
       setIsShopConnected(isConnected);
+      setConnectedShopId(isConnected ? shopDetail.shopId : null);
 
       if (isConnected) {
         toast.success("Shop connected", {
-          description: `${dataSHop.shop_id} berhasil terkoneksi`,
+          description: `${shopDetail.shopId} berhasil terkoneksi`,
         });
         return;
       }
